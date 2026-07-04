@@ -4,7 +4,11 @@ trigger:
      - main
      - feature 
 
-pool:
- vmImage: ubuntu-latest
+pool: 
+ name: pardeeppooljuly
 
-echo "this is first pipeline"
+stages:
+  - stage: 
+    jobs:
+      - job: "this"
+        
