@@ -16,7 +16,7 @@ stages:
           inputs:
             targetType: 'inline'
             script: 'terraform init'
-            workingDirectory: 'system.DefaultWorkingDirectory'
+            # workingDirectory: 'system.DefaultWorkingDirectory'
         - task: TerraformTask@5
           inputs:
             provider: 'azurerm'
