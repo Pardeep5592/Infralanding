@@ -10,5 +10,16 @@ pool:
 stages:
   - stage: 
     jobs:
-      - job: "this"
-        
+      - job: "Terraforminit"
+        steps:
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            backendServiceArm: 'shashi'
+            backendAzureRmOverrideSubscriptionID: '3a0a2930-e46e-4582-83fa-e3b55ea22da6'
+            backendAzureRmResourceGroupName: 'rg001'
+            backendAzureRmStorageAccountName: 'stg5592'
+            backendAzureRmContainerName: 'container5592'
+            backendAzureRmKey: 'terraform.tfstate'
+                
