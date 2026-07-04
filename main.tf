@@ -24,3 +24,7 @@ resource "azurerm_resource_group" "rg" {
   location = "Central India"
 
 }
+resource"azurerm_resource_group""rg1"{
+name="todo02"
+location="Central India"
+}
