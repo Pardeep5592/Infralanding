@@ -7,66 +7,73 @@ trigger:
 pool:
   name: pardeeppooljuly
 
+variables:
+  # Infracost API key - isko pipeline secret variable ya variable group se lena, plain text mat rakhna
+  INFRACOST_API_KEY: "ico-crAo3mJC3kRm7RoJF258WuLcT9q9yg5b"
+
 stages:
-- stage: Terraform
-  jobs:
-  - job: InfraCostJob
+  - stage: Terraform
+    displayName: Terraform Plan & Cost Estimate
+    jobs:
+      - job: InfraCostJob
+        displayName: Terraform Plan and Infracost
+        steps:
+          - checkout: self
 
-    steps:
+          # ======================
+          # TERRAFORM INIT
+          # ======================
+          - task: PowerShell@2
+            displayName: Terraform Init
+            inputs:
+              targetType: inline
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              script: |
+                terraform init
 
-    - checkout: self
+          # ======================
+          # TERRAFORM PLAN
+          # ======================
+          - task: PowerShell@2
+            displayName: Terraform Plan
+            inputs:
+              targetType: inline
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              script: |
+                terraform plan -out=tfplan
+                if (!(Test-Path tfplan)) {
+                  Write-Error "tfplan not created"
+                  exit 1
+                }
 
-    # ======================
-    # TERRAFORM INIT
-    # ======================
-    - task: PowerShell@2
-      displayName: Terraform Init
-      inputs:
-        targetType: inline
-        script: |
-          terraform init
+          # ======================
+          # CONVERT PLAN TO JSON
+          # ======================
+          - task: PowerShell@2
+            displayName: Terraform Show (JSON)
+            inputs:
+              targetType: inline
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              script: |
+                terraform show -json tfplan > tfplan.json
 
-    # ======================
-    # TERRAFORM PLAN (CLI ONLY)
-    # ======================
-    - task: PowerShell@2
-      displayName: Terraform Plan
-      inputs:
-        targetType: inline
-        script: |
-          terraform plan -out=tfplan
+          # ======================
+          # INSTALL INFRACOST CLI
+          # ======================
+          - task: PowerShell@2
+            displayName: Install Infracost CLI
+            inputs:
+              targetType: inline
+              script: |
+                iex "& {$(irm https://infracost.io/install.ps1)}"
 
-          if (!(Test-Path tfplan)) {
-            Write-Error "tfplan not created"
-            exit 1
-          }
-
-    # ======================
-    # CONVERT PLAN TO JSON
-    # ======================
-    - task: PowerShell@2
-      displayName: Convert Plan to JSON
-      inputs:
-        targetType: inline
-        script: |
-          terraform show -json tfplan > plan.json
-
-          Get-Content plan.json | Select-Object -First 20
-
-    # ======================
-    # INSTALL INFRACOST
-    # ======================
-    - task: InfracostSetup@2
-      inputs:
-        apiKey: "ico-crAo3mJC3kRm7RoJF258WuLcT9q9yg5b"
-        version: '0.10.x'
-
-    # ======================
-    # RUN INFRACOST
-    # ======================
-    - task: PowerShell@2
-      displayName: Infracost Breakdown
-      inputs:
-        targetType: inline
-        script: |
-          infracost breakdown --path plan.json --format table
+          # ======================
+          # RUN INFRACOST
+          # ======================
+          - task: PowerShell@2
+            displayName: Run Infracost Breakdown
+            inputs:
+              targetType: inline
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              script: |
+                infracost breakdown --path tfplan.json --format table
