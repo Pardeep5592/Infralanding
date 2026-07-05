@@ -17,6 +17,7 @@ stages:
             targetType: 'inline'
             script: 'terraform init'
             # workingDirectory: 'system.DefaultWorkingDirectory'
+   
         - task: TerraformTask@5
           inputs:
             provider: 'azurerm'
@@ -26,8 +27,12 @@ stages:
             provider: 'azurerm'
             command: 'plan'
             environmentServiceNameAzureRM: 'shashi'
-        - task: TerraformTask@5
+        - task: InfracostSetup@2
           inputs:
-            provider: 'azurerm'
-            command: 'apply'
-            environmentServiceNameAzureRM: 'shashi'
+            apiKey: 'ico-crAo3mJC3kRm7RoJF258WuLcT9q9yg5b'
+            version: '0.10.x'
+        # - task: TerraformTask@5
+        #   inputs:
+        #     provider: 'azurerm'
+        #     command: 'apply'
+        #     environmentServiceNameAzureRM: 'shashi'
