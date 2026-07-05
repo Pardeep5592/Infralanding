@@ -91,10 +91,23 @@ stages:
           # ======================
           # RUN INFRACOST
           # ======================
+        # ======================
+          # TERRAFORM SHOW + INFRACOST (SAME STEP)
+          # ======================
           - task: PowerShell@2
-            displayName: Run Infracost Breakdown
+            displayName: Terraform Show + Infracost Breakdown
             inputs:
               targetType: inline
               workingDirectory: '$(System.DefaultWorkingDirectory)'
               script: |
-                infracost breakdown --path "$(System.DefaultWorkingDirectory)\tfplan.json" --format table
+                $planJson = "$(System.DefaultWorkingDirectory)\tfplan.json"
+
+                terraform show -json tfplan | Out-File -FilePath $planJson -Encoding utf8 -NoNewline
+
+                if (!(Test-Path $planJson)) {
+                  Write-Error "tfplan.json not created"
+                  exit 1
+                }
+                Write-Host "tfplan.json size: $((Get-Item $planJson).Length) bytes"
+
+                infracost breakdown --path $planJson --format table
