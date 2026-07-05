@@ -49,14 +49,7 @@ stages:
           # ======================
           # CONVERT PLAN TO JSON
           # ======================
-          - task: PowerShell@2
-            displayName: Terraform Show (JSON)
-            inputs:
-              targetType: inline
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
-              script: |
-                terraform show -json tfplan > tfplan.json
-
+          
           # ======================
           # INSTALL INFRACOST CLI
           # ======================
@@ -67,10 +60,41 @@ stages:
           # ======================
           # RUN INFRACOST
           # ======================
+         # ======================
+          # CONVERT PLAN TO JSON
+          # ======================
+          - task: PowerShell@2
+            displayName: Terraform Show (JSON)
+            inputs:
+              targetType: inline
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              script: |
+                terraform show -json tfplan | Out-File -FilePath tfplan.json -Encoding utf8 -NoNewline
+
+          # ======================
+          # VERIFY JSON FILE (debug step, zaroori nahi lekin recommended)
+          # ======================
+          - task: PowerShell@2
+            displayName: Verify tfplan.json
+            inputs:
+              targetType: inline
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              script: |
+                if (!(Test-Path tfplan.json)) {
+                  Write-Error "tfplan.json not found"
+                  exit 1
+                }
+                $size = (Get-Item tfplan.json).Length
+                Write-Host "tfplan.json size: $size bytes"
+                Get-Content tfplan.json -TotalCount 5
+
+          # ======================
+          # RUN INFRACOST
+          # ======================
           - task: PowerShell@2
             displayName: Run Infracost Breakdown
             inputs:
               targetType: inline
               workingDirectory: '$(System.DefaultWorkingDirectory)'
               script: |
-                infracost breakdown --path tfplan.json --format table
+                infracost breakdown --path "$(System.DefaultWorkingDirectory)\tfplan.json" --format table
