@@ -69,7 +69,7 @@ stages:
     - task: InfracostSetup@2
       displayName: Install Infracost
       inputs:
-        apiKey: $(INFRACOST_API_KEY)
+        apiKey: "ico-crAo3mJC3kRm7RoJF258WuLcT9q9yg5b"
         version: '0.10.x'
 
     - task: PowerShell@2
