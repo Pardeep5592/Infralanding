@@ -60,13 +60,10 @@ stages:
           # ======================
           # INSTALL INFRACOST CLI
           # ======================
-          - task: PowerShell@2
-            displayName: Install Infracost CLI
+          - task: InfracostSetup@2
             inputs:
-              targetType: inline
-              script: |
-                iex "& {$(irm https://infracost.io/install.ps1)}"
-
+              apiKey: 'ico-crAo3mJC3kRm7RoJF258WuLcT9q9yg5b'
+              version: '0.10.x'
           # ======================
           # RUN INFRACOST
           # ======================
