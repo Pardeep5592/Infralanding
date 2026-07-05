@@ -9,10 +9,15 @@ pool:
 
 stages:
 - stage: Terraform
+  displayName: Terraform Stage
+
   jobs:
-  - job: TerraformInit
+  - job: TerraformJob
+    displayName: Terraform Job
 
     steps:
+
+    - checkout: self
 
     - task: PowerShell@2
       displayName: Terraform Init
@@ -33,12 +38,26 @@ stages:
         provider: azurerm
         command: plan
         environmentServiceNameAzureRM: shashi
+        commandOptions: '-out=tfplan'
 
-    - task: InfracostSetup@2
-      displayName: Install Infracost
+    - task: PowerShell@2
+      displayName: Verify tfplan
       inputs:
-        apiKey: $(INFRACOST_API_KEY)
-        version: '0.10.x'
+        targetType: inline
+        script: |
+          Write-Host "Current Directory:"
+          Get-Location
+
+          Write-Host "Files:"
+          Get-ChildItem -Force
+
+          if (Test-Path ".\tfplan") {
+              Write-Host "tfplan found."
+          }
+          else {
+              Write-Error "tfplan NOT found."
+              exit 1
+          }
 
     - task: PowerShell@2
       displayName: Generate Terraform JSON Plan
@@ -47,9 +66,25 @@ stages:
         script: |
           terraform show -json tfplan > plan.json
 
+    - task: InfracostSetup@2
+      displayName: Install Infracost
+      inputs:
+        apiKey: $(INFRACOST_API_KEY)
+        version: '0.10.x'
+
     - task: PowerShell@2
       displayName: Infracost Breakdown
       inputs:
         targetType: inline
         script: |
-          infracost breakdown --path plan.json --format table
+          infracost breakdown `
+            --path plan.json `
+            --format table
+
+    # Uncomment when ready
+    # - task: TerraformTask@5
+    #   displayName: Terraform Apply
+    #   inputs:
+    #     provider: azurerm
+    #     command: apply
+    #     environmentServiceNameAzureRM: shashi
