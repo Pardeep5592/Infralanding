@@ -1,38 +1,55 @@
 trigger:
- branches:
-   include:
-     - main
-     - feature 
+  branches:
+    include:
+      - main
+      - feature
 
-pool: 
- name: pardeeppooljuly
+pool:
+  name: pardeeppooljuly
 
 stages:
-  - stage: 
-    jobs:
-      - job: "Terraforminit"
-        steps:
-        - task: PowerShell@2
-          inputs:
-            targetType: 'inline'
-            script: 'terraform init'
-            # workingDirectory: 'system.DefaultWorkingDirectory'
-   
-        - task: TerraformTask@5
-          inputs:
-            provider: 'azurerm'
-            command: 'validate'
-        - task: TerraformTask@5
-          inputs:
-            provider: 'azurerm'
-            command: 'plan'
-            environmentServiceNameAzureRM: 'shashi'
-        - task: InfracostSetup@2
-          inputs:
-            apiKey: 'ico-crAo3mJC3kRm7RoJF258WuLcT9q9yg5b'
-            version: '0.10.x'
-        # - task: TerraformTask@5
-        #   inputs:
-        #     provider: 'azurerm'
-        #     command: 'apply'
-        #     environmentServiceNameAzureRM: 'shashi'
+- stage: Terraform
+  jobs:
+  - job: TerraformInit
+
+    steps:
+
+    - task: PowerShell@2
+      displayName: Terraform Init
+      inputs:
+        targetType: inline
+        script: |
+          terraform init
+
+    - task: TerraformTask@5
+      displayName: Terraform Validate
+      inputs:
+        provider: azurerm
+        command: validate
+
+    - task: TerraformTask@5
+      displayName: Terraform Plan
+      inputs:
+        provider: azurerm
+        command: plan
+        environmentServiceNameAzureRM: shashi
+
+    - task: InfracostSetup@2
+      displayName: Install Infracost
+      inputs:
+        apiKey: $(INFRACOST_API_KEY)
+        version: '0.10.x'
+
+    - task: PowerShell@2
+      displayName: Generate Terraform JSON Plan
+      inputs:
+        targetType: inline
+        script: |
+          terraform show -json tfplan > plan.json
+
+    - task: PowerShell@2
+      displayName: Infracost Breakdown
+      inputs:
+        targetType: inline
+        script: |
+          infracost breakdown --path plan.json --format table
