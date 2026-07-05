@@ -28,3 +28,9 @@ resource"azurerm_resource_group""rg1"{
 name="todo02"
 location="Central India"
 }
+resource "azurerm_storage_account""stg"{
+name="stg5591"
+resource_group_name="todo01"
+account_tier="Standard"
+account_replication_type="LRS"
+}
